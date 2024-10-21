@@ -1,0 +1,156 @@
+import mysql.connector as sql
+
+conn = sql.connect(host='localhost', user='root', password='1234', database='ATM_MACHINE')
+
+c1 = conn.cursor()
+
+print("=================================================")
+print(" WELCOME TO OUR BANK ")
+print("=================================================")
+print("1. To create account")
+print("2. To login")
+print("3. Exit")
+print("=================================================")
+
+op = int(input("Enter your choice: "))
+print("=================================================")
+
+if op == 1:
+    c = 'y'
+    while c == 'y':
+        m = int(input("Enter a 4-digit number as account number: "))
+        cb = "SELECT * FROM records WHERE ACCONT_NO={}".format(m)
+        c1.execute(cb)
+        d = c1.fetchall()
+
+        if len(d) != 0:
+            print("This account number already exists.")
+            c = input("Do you want to continue y/n: ")
+            if c == 'y':
+                continue
+            else:
+                print("Thank you.")
+                break
+        else:
+            name = input("Enter your name: ")
+            passw = int(input("Enter your numeric password (4 numbers): "))
+            ab = "INSERT INTO records(ACCONT_NO, PASSWORD, NAME) VALUES({}, {}, '{}')".format(m, passw, name)
+            c1.execute(ab)
+            conn.commit()
+            print("Account successfully created")
+            s = int(input("Enter the money to be deposited: "))
+            sr = "UPDATE records SET CR_AMT={} WHERE ACCONT_NO={}".format(s, m)
+            c1.execute(sr)
+            conn.commit()
+            ef = "UPDATE records SET BALANCE=CR_AMT-WITHDRAWAL WHERE ACCONT_NO={}".format(m)
+            c1.execute(ef)
+            conn.commit()
+            print("Successfully deposited")
+            break
+
+elif op == 2:
+    y = 'y'
+    while y == 'y':
+        acct = int(input("Enter your account number: "))
+        cb = "SELECT * FROM records WHERE ACCONT_NO={}".format(acct)
+        c1.execute(cb)
+        c1.fetchall()
+        data = c1.rowcount
+
+        if data == 1:
+            pas = int(input("Enter your password: "))
+            e = "SELECT PASSWORD FROM records WHERE ACCONT_NO={}".format(acct)
+            c1.execute(e)
+            a = c1.fetchone()
+            d = list(a)
+
+            if pas == d[0]:
+                print("Correct!")
+                print("1. Deposit money")
+                print("2. Withdraw money")
+                print("3. Transfer money")
+                print("4. Check balance")
+                print("5. Change account number")
+                r = int(input("Enter your choice: "))
+
+                if r == 1:
+                    amt = int(input("Enter the money to be deposited: "))
+                    sr = "UPDATE records SET CR_AMT=CR_AMT + {} WHERE ACCONT_NO={}".format(amt, acct)
+                    c1.execute(sr)
+                    conn.commit()
+                    ef = "UPDATE records SET BALANCE=CR_AMT-WITHDRAWAL WHERE ACCONT_NO={}".format(acct)
+                    c1.execute(ef)
+                    conn.commit()
+                    print("Successfully deposited")
+
+                elif r == 2:
+                    amt = int(input("Enter the money to withdraw: "))
+                    ah = "SELECT BALANCE FROM records WHERE ACCONT_NO={}".format(acct)
+                    c1.execute(ah)
+                    m = c1.fetchone()
+
+                    if amt > m[0]:
+                        print("You have less than", amt)
+                    else:
+                        sr = "UPDATE records SET BALANCE=BALANCE - {} WHERE ACCONT_NO={}".format(amt, acct)
+                        ed = "UPDATE records SET WITHDRAWAL={} WHERE ACCONT_NO={}".format(amt, acct)
+                        c1.execute(ed)
+                        c1.execute(sr)
+                        conn.commit()
+                        print("Successfully updated")
+
+                elif r == 3:
+                    act = int(input("Enter the account number to be transferred to: "))
+                    cb = "SELECT * FROM records WHERE ACCONT_NO={}".format(act)
+                    c1.execute(cb)
+                    c1.fetchall()
+                    data = c1.rowcount
+
+                    if data == 1:
+                        m = int(input("Enter the money to be transferred: "))
+                        ah = "SELECT BALANCE FROM records WHERE ACCONT_NO={}".format(acct)
+                        c1.execute(ah)
+                        c = c1.fetchone()
+
+                        if m > c[0]:
+                            print("You have less than", m)
+                        else:
+                            av = "UPDATE records SET BALANCE=BALANCE-{} WHERE ACCONT_NO={}".format(m, acct)
+                            cv = "UPDATE records SET BALANCE=BALANCE+{} WHERE ACCONT_NO={}".format(m, act)
+                            w = "UPDATE records SET WITHDRAWAL=WITHDRAWAL+{} WHERE ACCONT_NO={}".format(m, acct)
+                            t = "UPDATE records SET CR_AMT=CR_AMT+{} WHERE ACCONT_NO={}".format(m, act)
+                            c1.execute(av)
+                            c1.execute(cv)
+                            c1.execute(w)
+                            c1.execute(t)
+                            conn.commit()
+                            print("Successfully transferred")
+
+                elif r == 4:
+                    ma = "SELECT BALANCE FROM records WHERE ACCONT_NO={}".format(acct)
+                    c1.execute(ma)
+                    k = c1.fetchone()
+                    print("Balance in your account =", k[0])
+
+                elif r == 5:
+                    i = int(input("Enter your new account number: "))
+                    cb = "SELECT * FROM records WHERE ACCONT_NO={}".format(i)
+                    c1.execute(cb)
+                    c1.fetchall()
+                    data = c1.rowcount
+
+                    if data == 1:
+                        print("This number already exists")
+                    else:
+                        name = input("Enter your name: ")
+                        ar = "UPDATE records SET ACCONT_NO={} WHERE NAME='{}' AND PASSWORD={}".format(i, name, pas)
+                        c1.execute(ar)
+                        conn.commit()
+                        print("Your new account number is", i)
+
+        else:
+            print("Your account does not exist.")
+
+elif op == 3:
+    print("Exiting")
+    c1.close()
